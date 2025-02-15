@@ -145,16 +145,19 @@ def edit_karyawan():
         print("⚠️ Hanya admin yang dapat mengedit data karyawan.")
         return
 
-    nip = input('Masukkan NIP Karyawan yang ingin diedit: ').strip().capitalize()
-    for karyawan in data_karyawan:
-        if karyawan['NIP'] == nip:
-            karyawan['Nama'] = input(f"Nama ({karyawan['Nama']}): ") or karyawan['Nama']
-            karyawan['Jabatan'] = input(f"Jabatan ({karyawan['Jabatan']}): ") or karyawan['Jabatan']
-            karyawan['Divisi'] = input(f"Divisi ({karyawan['Divisi']}): ") or karyawan['Divisi']
-            karyawan['Status'] = input(f"Status ({karyawan['Status']}): ") or karyawan['Status']
+    while True:
+        nip = input('Masukkan NIP Karyawan yang ingin diedit: ').strip().capitalize()
+        karyawan = next((k for k in data_karyawan if k['NIP'] == nip), None)
+        
+        if karyawan:
+            karyawan['Nama'] = input_alphabet(f"Masukkan Nama Baru (NAMA SEBELUMNYA -> {karyawan['Nama']}): ") or karyawan['Nama']
+            karyawan['Jabatan'] = validasi_jabatan()
+            karyawan['Divisi'] = validasi_divisi()
+            karyawan['Status'] = validasi_status()
             print('✅ Data Karyawan Berhasil Diperbarui!')
-            return
-    print('⚠️ Data Karyawan Tidak Ditemukan.')
+            break  # Keluar dari loop setelah update
+        else:
+            print('⚠️ Data Karyawan Tidak Ditemukan. Silakan coba lagi.')
 
 def hapus_karyawan():
     # Hanya admin yang dapat menghapus data karyawan
@@ -210,23 +213,25 @@ def filter_karyawan():
 
 def rekomendasi():
     daftar(data_karyawan)
-    nip = input('🔍 Masukkan NIP Karyawan: ').strip()
-    # Sesuaikan case input agar cocok dengan data
-    karyawan = next((k for k in data_karyawan if k['NIP'].lower() == nip.lower()), None)
-    if karyawan:
-        divisi = karyawan['Divisi']
-        rekomendasi_proyek_text = rekomendasi_proyek.get(divisi, '❌ Belum ada rekomendasi proyek')
-        data_tabel = [
-            ["📌 NIP", karyawan['NIP']],
-            ["👤 Nama", karyawan['Nama']],
-            ["🏢 Divisi", divisi],
-            ["💡 Rekomendasi Proyek", rekomendasi_proyek_text]
-        ]
-        print("\n✨ Rekomendasi Proyek Karyawan ✨")
-        print(tabulate(data_tabel, tablefmt="fancy_grid"))
-    else:
-        print('⚠️ Data Karyawan Tidak Ditemukan.')
-
+    while True:
+        nip = input('🔍 Masukkan NIP Karyawan: ').strip()
+        # Sesuaikan case input agar cocok dengan data
+        karyawan = next((k for k in data_karyawan if k['NIP'].lower() == nip.lower()), None)
+        if karyawan:
+            divisi = karyawan['Divisi']
+            rekomendasi_proyek_text = rekomendasi_proyek.get(divisi, '❌ Belum ada rekomendasi proyek')
+            data_tabel = [
+                ["📌 NIP", karyawan['NIP']],
+                ["👤 Nama", karyawan['Nama']],
+                ["🏢 Divisi", divisi],
+                ["💡 Rekomendasi Proyek", rekomendasi_proyek_text]
+            ]
+            print("\n✨ Rekomendasi Proyek Karyawan ✨")
+            print(tabulate(data_tabel, tablefmt="fancy_grid"))
+            break  # Keluar dari loop setelah menemukan karyawan yang sesuai
+        else:
+            print('⚠️ Data Karyawan Tidak Ditemukan. Silakan coba lagi')
+            
 def laporan_ringkasan():
     total_karyawan = len(data_karyawan)
     aktif = sum(1 for k in data_karyawan if k['Status'].lower() == 'aktif')
