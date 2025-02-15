@@ -1,5 +1,7 @@
 from tabulate import tabulate
+import re
 
+# Data karyawan dan proyek
 data_karyawan = [
     {'NIP': 'Abc111', 'Nama': 'Fahmi Zaitulah', 'Jabatan': 'Administrator IT', 'Divisi': 'IT', 'Status': 'Aktif'},
     {'NIP': 'Abc112', 'Nama': 'Darius Erwin', 'Jabatan': 'Manager Pergudangan', 'Divisi': 'Pergudangan', 'Status': 'Aktif'},
@@ -8,44 +10,158 @@ data_karyawan = [
     {'NIP': 'Abc115', 'Nama': 'Siti Nurhaliza', 'Jabatan': 'Spesialis SDM', 'Divisi': 'Sumber Daya Manusia', 'Status': 'Cuti'}
 ]
 
-project_karyawan = [
-    {'NIP': 'Abc111', 'Nama': 'Fahmi Zaitulah', 'Project': 'Pembuatan website DPRD Kota Bandung'},
-    {'NIP': 'Abc112', 'Nama': 'Darius Erwin', 'Project': 'Aplikasi pengelolaan stok PT Mayora'},
-    {'NIP': 'Abc113', 'Nama': 'Laila Amalia', 'Project': 'Penyusunan anggaran PT Indofood'},
-    {'NIP': 'Abc114', 'Nama': 'Rizky Pratama', 'Project': 'Peningkatan pemasaran PT Mustika Ratu'},
-    {'NIP': 'Abc115', 'Nama': 'Siti Nurhaliza', 'Project': 'Pengembangan fitur rekrutmen online'}
-]
-
 rekomendasi_proyek = {
-    'IT': 'Pengembangan Sistem Keamanan Perusahaan',
-    'Pergudangan': 'Optimasi Rantai Pasokan PT Unilever',
-    'Keuangan': 'Analisis Risiko Keuangan Bank BRI',
-    'Pemasaran': 'Strategi Digital Marketing PT Gojek',
-    'Sumber Daya Manusia': 'Implementasi HRIS di PT Telkom'
+    'IT': 'Pengembangan Sistem Keamanan PT FJBS',
+    'Pergudangan': 'Optimasi Rantai Pasokan PT FJBS',
+    'Keuangan': 'Membantu Proses Analisis Risiko Keuangan PT FJBS',
+    'Pemasaran': 'Menentukan Strategi Digital Marketing di PT FJBS',
+    'Sumber Daya Manusia': 'Implementasi HRIS (Human Resources Information System) di PT FJBS'
 }
-# Validasi input hanya boleh alfabet dan angka
-def input_alphabet_numeric(prompt):
-  while True:
-      value = input(prompt).strip().title()
-      if value.replace(" ", "").isalnum():  # Mengizinkan spasi dan angka
-          return value
-      print("❌ Inputan tidak valid, mohon gunakan alphabet atau angka.")
 
-# Validasi input hanya boleh alfabet
+# Data user untuk autentikasi dengan role masing-masing
+users = {
+    "admin": {"password": "admin123", "role": "admin"},
+    "user": {"password": "user123", "role": "user"}
+}
+
+# Variabel global untuk menyimpan user yang sedang login
+current_user = None
+
+def login():
+    global current_user
+    attempts = 3
+    while attempts > 0:
+        print('\nJIKA ANDA ADALAH USER, MASUKKAN USERNAME: "user", PASSWORD "user123"')
+        print("\n=== Login ===")
+        username = input("Username: ").strip()
+        password = input("Password: ").strip()
+        if username in users and users[username]["password"] == password:
+            current_user = {"username": username, "role": users[username]["role"]}
+            print(f"\nSelamat datang, {username}! Anda login sebagai {current_user['role']}.")
+            return True  # Login berhasil
+        else:
+            attempts -= 1
+            print(f"Username atau Password salah. {attempts} kesempatan tersisa.")
+    print("Akses ditolak. Program dihentikan.")
+    return False  # Login gagal
+
+# Daftar valid untuk divisi dan status
+daftar_divisi = {'IT', 'Pergudangan', 'Keuangan', 'Pemasaran', 'Sumber Daya Manusia'}
+daftar_status = {'Aktif', 'Cuti'}
+
+# Mendapatkan daftar jabatan dari data_karyawan
+daftar_jabatan = {karyawan['Jabatan'] for karyawan in data_karyawan}
+
+# Regex pattern untuk NIP
+nip_pattern = re.compile(r'^[A-Za-z]{3}\d{3}$')  # Contoh: Abc111
+
+# Fungsi validasi pilihan dari daftar yang tersedia
+def validasi_pilihan(prompt, daftar_pilihan):
+    daftar_pilihan = sorted(list(daftar_pilihan))  # Ubah ke list dan urutkan agar konsisten
+    while True:
+        print(f"\nPilihan {prompt.lower()} yang tersedia:")
+        for i, pilihan in enumerate(daftar_pilihan, 1):
+            print(f"  {i}. {pilihan}")  # Menampilkan pilihan dengan nomor urut
+
+        value = input(f"\nMasukkan angka pilihan {prompt}: ").strip()
+        if value.isdigit():  # Memastikan input adalah angka
+            index = int(value) - 1  # Sesuaikan dengan indeks list (mulai dari 0)
+            if 0 <= index < len(daftar_pilihan):
+                return daftar_pilihan[index]  # Kembalikan pilihan yang sesuai
+        print(f"❌ Input tidak valid. Pilih angka dari daftar di atas.")
+
+# Fungsi validasi spesifik
+def validasi_jabatan():
+    return validasi_pilihan('Jabatan', daftar_jabatan)
+
+def validasi_divisi():
+    return validasi_pilihan('Divisi', daftar_divisi)
+
+def validasi_status():
+    return validasi_pilihan('Status', daftar_status)
+
+# Fungsi input alfabet untuk nama
 def input_alphabet(prompt):
     while True:
         value = input(prompt).strip().title()
-        if value.replace(" ", "").isalpha():  # Mengizinkan spasi
+        if value.replace(" ", "").isalpha():
             return value
         print("❌ Inputan tidak valid, mohon gunakan alphabet.")
 
-def daftar(data_karyawan):
-    if data_karyawan:
-        print(tabulate(data_karyawan, headers="keys", tablefmt="fancy_grid"))
+def daftar(data):
+    if data:
+        print(tabulate(data, headers="keys", tablefmt="fancy_grid"))
     else:
         print("\nTidak ada data karyawan.")
 
+# Fungsi menambahkan data karyawan dengan validasi tambahan
+def tambah_karyawan():
+    if current_user["role"] != "admin":
+        print("⚠️ Hanya admin yang dapat menambah data karyawan.")
+        return
+
+    while True:
+        print('''\n++++++++++++++++++++++++++++\n    Tambah Data Karyawan:\n++++++++++++++++++++++++++++\n  1. Tambah Data Karyawan\n  2. Kembali Ke Menu Utama''')
+        pilihan = input('Pilih Menu (1 - 2): ').strip()
+        if pilihan not in ['1', '2']:
+            print("Pilihan tidak valid. Silakan pilih angka 1 - 2.")
+            continue
+
+        if pilihan == '1':
+            while True:
+                nip = input('Masukkan NIP Karyawan: ').strip().capitalize()
+                if not nip_pattern.match(nip):
+                    print("❌ Format NIP tidak valid! Harus berupa 3 huruf + 3 angka (contoh: Abc123).")
+                    continue
+                if any(k['NIP'] == nip for k in data_karyawan):
+                    print("⚠️ NIP tersebut sudah ada.")
+                    continue
+                break  # Keluar dari loop jika valid
+
+            nama = input_alphabet('Masukkan Nama: ')
+            jabatan = validasi_jabatan()
+            divisi = validasi_divisi()
+            status = validasi_status()
+
+            simpan_data = input('Simpan Data? (Y/N): ').strip().lower()
+            if simpan_data == 'y':
+                data_karyawan.append({
+                    'NIP': nip,
+                    'Nama': nama,
+                    'Jabatan': jabatan,
+                    'Divisi': divisi,
+                    'Status': status
+                })
+                print('✅ Data Karyawan Berhasil Disimpan.')
+            else:
+                print('❌ Data Karyawan Batal Disimpan.')
+        else:
+            break
+
+
+def edit_karyawan():
+    # Hanya admin yang dapat mengedit data karyawan
+    if current_user["role"] != "admin":
+        print("⚠️ Hanya admin yang dapat mengedit data karyawan.")
+        return
+
+    nip = input('Masukkan NIP Karyawan yang ingin diedit: ').strip().capitalize()
+    for karyawan in data_karyawan:
+        if karyawan['NIP'] == nip:
+            karyawan['Nama'] = input(f"Nama ({karyawan['Nama']}): ") or karyawan['Nama']
+            karyawan['Jabatan'] = input(f"Jabatan ({karyawan['Jabatan']}): ") or karyawan['Jabatan']
+            karyawan['Divisi'] = input(f"Divisi ({karyawan['Divisi']}): ") or karyawan['Divisi']
+            karyawan['Status'] = input(f"Status ({karyawan['Status']}): ") or karyawan['Status']
+            print('✅ Data Karyawan Berhasil Diperbarui!')
+            return
+    print('⚠️ Data Karyawan Tidak Ditemukan.')
+
 def hapus_karyawan():
+    # Hanya admin yang dapat menghapus data karyawan
+    if current_user["role"] != "admin":
+        print("⚠️ Hanya admin yang dapat menghapus data karyawan.")
+        return
+
     while True:
         daftar(data_karyawan)
         print('''
@@ -78,61 +194,10 @@ def hapus_karyawan():
         else:
             break
 
-def rekomendasi():
-    daftar(data_karyawan)
-
-    nip = input('🔍 Masukkan NIP Karyawan: ').strip()
-
-    # Menyesuaikan case input agar cocok dengan data
-    karyawan = next((k for k in data_karyawan if k['NIP'].lower() == nip.lower()), None)
-
-    if karyawan:
-        divisi = karyawan['Divisi']
-        rekomendasi = rekomendasi_proyek.get(divisi, '❌ Belum ada rekomendasi proyek')
-
-        data_tabel = [
-            ["📌 NIP", karyawan['NIP']],
-            ["👤 Nama", karyawan['Nama']],
-            ["🏢 Divisi", divisi],
-            ["💡 Rekomendasi Proyek", rekomendasi]
-        ]
-
-        print("\n✨ Rekomendasi Proyek Karyawan ✨")
-        print(tabulate(data_tabel, tablefmt="fancy_grid"))
-
-    else:
-        print('⚠️ Data Karyawan Tidak Ditemukan.')
-
-def edit_karyawan():
-    nip = input('Masukkan NIP Karyawan yang ingin diedit: ').strip().capitalize()
-    for karyawan in data_karyawan:
-        if karyawan['NIP'] == nip:
-            karyawan['Nama'] = input(f"Nama ({karyawan['Nama']}): ") or karyawan['Nama']
-            karyawan['Jabatan'] = input(f"Jabatan ({karyawan['Jabatan']}): ") or karyawan['Jabatan']
-            karyawan['Divisi'] = input(f"Divisi ({karyawan['Divisi']}): ") or karyawan['Divisi']
-            karyawan['Status'] = input(f"Status ({karyawan['Status']}): ") or karyawan['Status']
-            print('✅ Data Karyawan Berhasil Diperbarui!')
-            return
-    print('⚠️ Data Karyawan Tidak Ditemukan.')
-
-def laporan_ringkasan():
-    total_karyawan = len(data_karyawan)
-    aktif = sum(1 for k in data_karyawan if k['Status'].lower() == 'aktif')
-    cuti = total_karyawan - aktif
-
-    data_ringkasan = [
-        ["Total Karyawan", total_karyawan],
-        ["Karyawan Aktif", aktif],
-        ["Karyawan Cuti", cuti]
-    ]
-
-    print("\n📊 Ringkasan Data Status Karyawan 📊")
-    print(tabulate(data_ringkasan, headers=["Kategori", "Jumlah"], tablefmt="fancy_grid"))
-
 def filter_karyawan():
     pilihan = input("Cari berdasarkan Nama (N) atau Divisi (D)? ").strip().lower()
     keyword = input("Masukkan keyword pencarian: ").strip().lower()
-    
+
     if pilihan == 'n':
         hasil = [k for k in data_karyawan if keyword in k['Nama'].lower()]
     elif pilihan == 'd':
@@ -140,9 +205,39 @@ def filter_karyawan():
     else:
         print("Pilihan tidak valid. Silakan masukkan N atau D.")
         return
-    
+
     daftar(hasil) if hasil else print('⚠️ Tidak ada hasil yang ditemukan.')
 
+def rekomendasi():
+    daftar(data_karyawan)
+    nip = input('🔍 Masukkan NIP Karyawan: ').strip()
+    # Sesuaikan case input agar cocok dengan data
+    karyawan = next((k for k in data_karyawan if k['NIP'].lower() == nip.lower()), None)
+    if karyawan:
+        divisi = karyawan['Divisi']
+        rekomendasi_proyek_text = rekomendasi_proyek.get(divisi, '❌ Belum ada rekomendasi proyek')
+        data_tabel = [
+            ["📌 NIP", karyawan['NIP']],
+            ["👤 Nama", karyawan['Nama']],
+            ["🏢 Divisi", divisi],
+            ["💡 Rekomendasi Proyek", rekomendasi_proyek_text]
+        ]
+        print("\n✨ Rekomendasi Proyek Karyawan ✨")
+        print(tabulate(data_tabel, tablefmt="fancy_grid"))
+    else:
+        print('⚠️ Data Karyawan Tidak Ditemukan.')
+
+def laporan_ringkasan():
+    total_karyawan = len(data_karyawan)
+    aktif = sum(1 for k in data_karyawan if k['Status'].lower() == 'aktif')
+    cuti = total_karyawan - aktif
+    data_ringkasan = [
+        ["Total Karyawan", total_karyawan],
+        ["Karyawan Aktif", aktif],
+        ["Karyawan Cuti", cuti]
+    ]
+    print("\n📊 Ringkasan Data Status Karyawan 📊")
+    print(tabulate(data_ringkasan, headers=["Kategori", "Jumlah"], tablefmt="fancy_grid"))
 
 def menu():
     while True:
@@ -182,4 +277,6 @@ def menu():
             print('Terima Kasih!')
             break
 
-menu()
+# Program Utama
+if login():
+      menu()
